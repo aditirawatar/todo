@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/components/ThemeContext";
+import { auth } from "@/firebase/firebase";
 
 const themeStyles = {
   light: {
@@ -45,20 +46,37 @@ const Home = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const selectedTheme = themeStyles[theme] || themeStyles["light"];
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(currentUser => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className={`min-h-screen flex flex-col items-center justify-center ${selectedTheme.background} ${selectedTheme.text} transition-colors duration-300`}>
       <div className="p-6 max-w-md w-full space-y-4 bg-transparent dark:bg-zinc-900/80 backdrop-blur-md rounded-lg shadow-md flex flex-col items-center">
         <h1 className="text-2xl font-bold">Welcome to Doto</h1>
         <p className="text-sm opacity-80">
-          This is your personal space. Use the navigation to explore your dashboard, profile, and more. Go on, get signed up.
+          This is your personal space. Use the navigation to explore your dashboard, profile, and more.
         </p>
-        <button
-          onClick={() => navigate("/signup")}
-          className="bg-gray-300 text-black dark:bg-gray-700 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
-        >
-          Signup
-        </button>
+        {user ? (
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="bg-gray-300 text-black dark:bg-gray-700 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
+          >
+            Go to Dashboard
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate("/signup")}
+            className="bg-gray-300 text-black dark:bg-gray-700 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
+          >
+            Signup
+          </button>
+        )}
       </div>
 
       <footer className={`mt-8 mb-4 text-center text-sm ${selectedTheme.footer}`}>
