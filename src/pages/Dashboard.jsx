@@ -11,10 +11,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [backgroundUrl, setBackgroundUrl] = useState("");
   const { theme } = useTheme();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState("notes");
- 
-  //Themes
+
   const getThemeColors = () => {
     switch (theme) {
       case 'dark':
@@ -99,14 +98,17 @@ const Dashboard = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/*Navbar*/}
+      {/* Navbar */}
       <nav className={`${colors.navbar} text-white p-4 shadow-md flex justify-between items-center`}>
-        <button 
-          onClick={() => setSidebarOpen(!sidebarOpen)} 
-          className={`text-xl ${colors.icon}`}
-        >
-          {sidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-        </button>
+        {/* Only show menu button on small screens */}
+        <div className="md:hidden">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className={`text-xl ${colors.icon}`}
+          >
+            {sidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+          </button>
+        </div>
         <button
           onClick={() => navigate("/")}
           className={`flex items-center ${colors.button} px-4 py-2 rounded-md transition-colors`}
@@ -117,6 +119,7 @@ const Dashboard = () => {
       </nav>
 
       <main className="flex-1 relative flex">
+        {/* Background */}
         <div
           className={`absolute inset-0 ${!backgroundUrl ? 'bg-gradient-to-br from-white via-gray-100 to-gray-200' : ''}`}
           style={{
@@ -126,36 +129,78 @@ const Dashboard = () => {
             backgroundAttachment: "fixed",
           }}
         />
-        {backgroundUrl && <div className={`absolute inset-0 bg-black/30`} />}
+        {backgroundUrl && <div className="absolute inset-0 bg-black/30" />}
 
-        {/*Sidebar*/}
+        {/* Sidebar for large screens (left column) */}
+        <div className={`hidden md:block relative z-20 w-64 p-4 ${colors.sidebar} ${colors.text} shadow-lg border-r ${colors.border}`}>
+          <h3 className="text-lg font-semibold mb-4">Menu</h3>
+          <button
+            onClick={() => setActiveView("notes")}
+            className={`w-full text-left mb-2 p-3 rounded-lg transition-colors ${
+              activeView === "notes"
+                ? `${colors.activeButton} font-medium`
+                : `hover:bg-opacity-50 ${colors.button.replace('hover:', '')}/20`
+            }`}
+          >
+            📝 Notes
+          </button>
+          <button
+            onClick={() => setActiveView("todos")}
+            className={`w-full text-left p-3 rounded-lg transition-colors ${
+              activeView === "todos"
+                ? `${colors.activeButton} font-medium`
+                : `hover:bg-opacity-50 ${colors.button.replace('hover:', '')}/20`
+            }`}
+          >
+            ✅ Todos
+          </button>
+        </div>
+
+        {/* Mobile Sidebar - overlays content only */}
         {sidebarOpen && (
-          <div className={`relative z-20 w-64 p-4 ${colors.sidebar} ${colors.text} shadow-lg border-r ${colors.border}`}>
-            <h3 className="text-lg font-semibold mb-4">Menu</h3>
-            <button
-              onClick={() => setActiveView("notes")}
-              className={`w-full text-left mb-2 p-3 rounded-lg transition-colors ${
-                activeView === "notes" 
-                  ? `${colors.activeButton} font-medium`
-                  : `hover:bg-opacity-50 ${colors.button.replace('hover:', '')}/20`
-              }`}
-            >
-              📝 Notes
-            </button>
-            <button
-              onClick={() => setActiveView("todos")}
-              className={`w-full text-left p-3 rounded-lg transition-colors ${
-                activeView === "todos" 
-                  ? `${colors.activeButton} font-medium`
-                  : `hover:bg-opacity-50 ${colors.button.replace('hover:', '')}/20`
-              }`}
-            >
-              ✅ Todos
-            </button>
-          </div>
+          <>
+            <div className={`absolute top-0 left-0 right-0 bottom-0 z-30 md:hidden p-4
+                            ${colors.sidebar} ${colors.text} border-r ${colors.border}
+                            h-full overflow-y-auto`}>
+              <h3 className="text-lg font-semibold mb-4">Menu</h3>
+              <button
+                onClick={() => {
+                  setActiveView("notes");
+                  setSidebarOpen(false);
+                }}
+                className={`w-full text-left mb-2 p-3 rounded-lg transition-colors ${
+                  activeView === "notes"
+                    ? `${colors.activeButton} font-medium`
+                    : `hover:bg-opacity-50 ${colors.button.replace('hover:', '')}/20`
+                }`}
+              >
+                📝 Notes
+              </button>
+              <button
+                onClick={() => {
+                  setActiveView("todos");
+                  setSidebarOpen(false);
+                }}
+                className={`w-full text-left p-3 rounded-lg transition-colors ${
+                  activeView === "todos"
+                    ? `${colors.activeButton} font-medium`
+                    : `hover:bg-opacity-50 ${colors.button.replace('hover:', '')}/20`
+                }`}
+              >
+                ✅ Todos
+              </button>
+            </div>
+
+            {/* Backdrop for mobile sidebar */}
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm z-20 md:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          </>
         )}
-        
-        <div className={`relative z-10 flex-1 p-6 overflow-auto`}>
+
+        {/* Main content */}
+        <div className="relative z-10 flex-1 p-6 overflow-auto">
           <div className="max-w-4xl mx-auto">
             {activeView === "notes" && <Notes />}
             {activeView === "todos" && <Todos />}

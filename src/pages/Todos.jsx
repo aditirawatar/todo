@@ -21,35 +21,40 @@ const Todos = () => {
   const [editContent, setEditContent] = useState("");
   const [isAddingTask, setIsAddingTask] = useState(false);
   const { theme } = useTheme();
-  const[showAppreciation,setShowAppreciation]=useState(false);
-  const[currentMessage,setCurrentMessage]=useState("");
+  const [showAppreciation, setShowAppreciation] = useState(false);
+  const [currentMessage, setCurrentMessage] = useState("");
 
   const appreciationMessages = [
     "Great job completing all your tasks! 🎉",
     "Productivity champion! 💪",
     "You're on fire! 🔥",
     "Task master! All done! ✅",
-    "Nothing can stop you now! 🚀"
+    "Nothing can stop you now! �"
   ];
 
   const toggleComplete = async (todo) => {
-  const newCompletedStatus = !todo.completed;
-  await updateDoc(doc(db, "todos", todo.id), {
-    completed: newCompletedStatus,
-  });
+    const newCompletedStatus = !todo.completed;
+    try {
+      await updateDoc(doc(db, "todos", todo.id), {
+        completed: newCompletedStatus,
+      });
 
-  if (newCompletedStatus) {
-    const allCompleted = todos.every(t => t.id === todo.id ? newCompletedStatus : t.completed);
-    if (allCompleted) {
-      const randomMessage = appreciationMessages[
-        Math.floor(Math.random() * appreciationMessages.length)
-      ];
-      setCurrentMessage(randomMessage);
-      setShowAppreciation(true);
-      setTimeout(() => setShowAppreciation(false), 3000);
+      if (newCompletedStatus) {
+        const allCompleted = todos.every(t => t.id === todo.id ? newCompletedStatus : t.completed);
+        if (allCompleted) {
+          const randomMessage = appreciationMessages[
+            Math.floor(Math.random() * appreciationMessages.length)
+          ];
+          setCurrentMessage(randomMessage);
+          setShowAppreciation(true);
+          setTimeout(() => setShowAppreciation(false), 3000);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating todo: ", error);
     }
-  }
-};
+  };
+
   const getThemeColors = () => {
     switch (theme) {
       case 'dark':
@@ -58,7 +63,9 @@ const Todos = () => {
           text: 'text-gray-100',
           card: 'bg-gray-700',
           completedCard: 'bg-green-900/30',
-          button: 'bg-blue-600 hover:bg-blue-700'
+          button: 'bg-blue-600 hover:bg-blue-700',
+          input: 'bg-gray-700 text-gray-100',
+          accent: 'blue-500'
         };
       case 'blushLavender':
         return {
@@ -66,7 +73,9 @@ const Todos = () => {
           text: 'text-purple-900',
           card: 'bg-white',
           completedCard: 'bg-green-100',
-          button: 'bg-purple-500 hover:bg-purple-600'
+          button: 'bg-purple-500 hover:bg-purple-600',
+          input: 'bg-white text-purple-900',
+          accent: 'purple-500'
         };
       case 'neonNight':
         return {
@@ -74,7 +83,9 @@ const Todos = () => {
           text: 'text-purple-100',
           card: 'bg-gray-800',
           completedCard: 'bg-green-900/30',
-          button: 'bg-purple-600 hover:bg-purple-700'
+          button: 'bg-purple-600 hover:bg-purple-700',
+          input: 'bg-gray-800 text-purple-100',
+          accent: 'purple-600'
         };
       case 'earthyBeige':
         return {
@@ -82,7 +93,9 @@ const Todos = () => {
           text: 'text-stone-800',
           card: 'bg-white',
           completedCard: 'bg-green-100',
-          button: 'bg-amber-500 hover:bg-amber-600'
+          button: 'bg-amber-500 hover:bg-amber-600',
+          input: 'bg-white text-stone-800',
+          accent: 'amber-500'
         };
       case 'galaxyFade':
         return {
@@ -90,7 +103,9 @@ const Todos = () => {
           text: 'text-pink-100',
           card: 'bg-pink-800',
           completedCard: 'bg-green-900/30',
-          button: 'bg-pink-600 hover:bg-pink-700'
+          button: 'bg-pink-600 hover:bg-pink-700',
+          input: 'bg-pink-800 text-pink-100',
+          accent: 'pink-600'
         };
       default: 
         return {
@@ -99,6 +114,7 @@ const Todos = () => {
           card: 'bg-white',
           completedCard: 'bg-green-100',
           button: 'bg-blue-500 hover:bg-blue-600',
+          input: 'bg-white text-gray-900',
           accent: 'blue-500'
         };
     }
@@ -122,20 +138,29 @@ const Todos = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleAdd = async () => {
+  const handleAdd = async (e) => {
+    e.preventDefault();
     if (!newTask.trim()) return;
-    await addDoc(collection(db, "todos"), {
-      task: newTask,
-      completed: false,
-      userId: auth.currentUser.uid,
-      createdAt: new Date(),
-    });
-    setNewTask("");
-    setIsAddingTask(false);
+    try {
+      await addDoc(collection(db, "todos"), {
+        task: newTask,
+        completed: false,
+        userId: auth.currentUser.uid,
+        createdAt: new Date(),
+      });
+      setNewTask("");
+      setIsAddingTask(false);
+    } catch (error) {
+      console.error("Error adding todo: ", error);
+    }
   };
 
   const handleDelete = async (id) => {
-    await deleteDoc(doc(db, "todos", id));
+    try {
+      await deleteDoc(doc(db, "todos", id));
+    } catch (error) {
+      console.error("Error deleting todo: ", error);
+    }
   };
 
   const handleEdit = (todo) => {
@@ -143,13 +168,18 @@ const Todos = () => {
     setEditContent(todo.task);
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (e) => {
+    e.preventDefault();
     if (!editContent.trim()) return;
-    await updateDoc(doc(db, "todos", editId), { 
-      task: editContent 
-    });
-    setEditId(null);
-    setEditContent("");
+    try {
+      await updateDoc(doc(db, "todos", editId), { 
+        task: editContent 
+      });
+      setEditId(null);
+      setEditContent("");
+    } catch (error) {
+      console.error("Error updating todo: ", error);
+    }
   };
 
   const todoVariants = {
@@ -172,7 +202,7 @@ const Todos = () => {
                 ? 'bg-purple-700 text-white' 
                 : 'bg-green-100 text-green-800'
             } shadow-lg z-50`}
-             >
+          >
             <div className="flex items-center">
               <motion.span
                 animate={{ scale: [1, 1.2, 1] }}
@@ -204,29 +234,33 @@ const Todos = () => {
             exit={{ opacity: 0, height: 0 }}
             className="mb-6 overflow-hidden"
           >
-            <div className="relative">
-              <input
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
-                placeholder="Add new task..."
-                className={`w-full p-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-${colors.accent} ${colors.text} ${colors.card}`}
-                autoFocus
-              />
-              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-2">
-                <button
-                  onClick={() => setIsAddingTask(false)}
-                  className="p-1 text-gray-500 hover:text-gray-700"
-                >
-                  <FiX size={20} />
-                </button>
-                <button
-                  onClick={handleAdd}
-                  className={`p-1 text-${colors.accent} hover:text-${colors.accent}-700`}
-                >
-                  <FiSave size={20} />
-                </button>
+            <form onSubmit={handleAdd}>
+              <div className="relative">
+                <input
+                  value={newTask}
+                  onChange={(e) => setNewTask(e.target.value)}
+                  placeholder="Add new task..."
+                  className={`w-full p-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-${colors.accent} ${colors.input}`}
+                  autoFocus
+                  required
+                />
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingTask(false)}
+                    className="p-1 text-gray-500 hover:text-gray-700"
+                  >
+                    <FiX size={20} />
+                  </button>
+                  <button
+                    type="submit"
+                    className={`p-1 text-${colors.accent} hover:text-${colors.accent}-700`}
+                  >
+                    <FiSave size={20} />
+                  </button>
+                </div>
               </div>
-            </div>
+            </form>
           </motion.div>
         )}
       </AnimatePresence>
@@ -238,7 +272,9 @@ const Todos = () => {
             animate={{ opacity: 1 }}
             className="text-center py-10"
           >
-            <p className="text-gray-500 text-lg">No todos yet. Click the + button to add one!</p>
+            <p className={`${theme === 'dark' || theme === 'neonNight' || theme === 'galaxyFade' ? 'text-gray-400' : 'text-gray-500'} text-lg`}>
+              No todos yet. Click the + button to add one!
+            </p>
           </motion.div>
         ) : (
           <motion.ul className="space-y-2">
@@ -258,8 +294,8 @@ const Todos = () => {
                   onClick={() => toggleComplete(todo)}
                   className={`mt-1 mr-3 flex-shrink-0 w-5 h-5 rounded-full border ${
                     todo.completed
-                      ? "bg-gray-400 border-gray-700 flex items-center justify-center"
-                      : "border-gray-300 dark:border-gray-500"
+                      ? `bg-${colors.accent} border-${colors.accent} flex items-center justify-center`
+                      : "border-gray-300"
                   }`}
                 >
                   {todo.completed && <FiCheck className="text-white" size={14} />}
@@ -267,31 +303,35 @@ const Todos = () => {
 
                 <div className="flex-1 min-w-0">
                   {editId === todo.id ? (
-                    <div className="space-y-2">
-                      <input
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-${colors.accent} ${colors.text} ${colors.card}`}
-                        autoFocus
-                      />
-                      <div className="flex justify-end space-x-2">
-                        <button
-                          onClick={() => setEditId(null)}
-                          className="px-3 py-1 bg-gray-300 hover:bg-gray-400 rounded transition-colors"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleUpdate}
-                          className={`px-3 py-1 ${colors.button} text-white rounded transition-colors`}
-                        >
-                          Save
-                        </button>
+                    <form onSubmit={handleUpdate}>
+                      <div className="space-y-2">
+                        <input
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-${colors.accent} ${colors.input}`}
+                          autoFocus
+                          required
+                        />
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditId(null)}
+                            className="px-3 py-1 bg-gray-300 hover:bg-gray-400 rounded transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className={`px-3 py-1 bg-${colors.accent} hover:bg-${colors.accent}-700 text-white rounded transition-colors`}
+                          >
+                            Save
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    </form>
                   ) : (
                     <p
-                      className={`break-words ${todo.completed ? "line-through text-gray-500 dark:text-gray-400" : ""}`}
+                      className={`break-words ${todo.completed ? "line-through text-gray-500" : ""}`}
                     >
                       {todo.task}
                     </p>
